@@ -1,0 +1,90 @@
+TestSample=read.table("D:\\TS.txt", header=T, row.names=1, sep="\t") #upload sapmles
+DB=read.table("D:\\DB.txt", header=T, row.names=1, sep="\t") #upload current data
+Val1=cor(t(DB), t(TestSample), method="kendall") #calculate 1st step of score value
+DB1=DB
+TestSample1=TestSample
+x=1
+y=1
+while(y<=ncol(DB)){
+	if(x>nrow(DB)){	
+		x=1
+		y=y+1
+		}else{y=y}
+	if(DB[x,y]>1.15){
+		DB1[x,y]=1
+		x=x+1
+		}else{
+		DB1[x,y]=0
+		x=x+1
+	}
+}
+x=1
+y=1
+while(y<=ncol(TestSample)){
+	if(x>nrow(TestSample)){	
+		x=1
+		y=y+1
+		}else{y=y}
+	if(TestSample[x,y]>1.15){ #convert intensity to non-quantity data
+		TestSample1[x,y]=1
+		x=x+1
+		}else{
+		TestSample1[x,y]=0
+		x=x+1
+	}
+}
+Val2=cor(t(DB1), t(TestSample1), method="kendall") #calculate 2nd step of score value
+x=1
+y=0
+a=1
+x1=1
+x2=1
+V2=0
+Val3=Val2
+while(x1<=nrow(Val3) & x2<=ncol(Val3)){ #calculate 3d step of score value, most important and slow
+	y=y+1
+	if(x==nrow(DB) & y>ncol(TestSample)){
+		x=1
+		y=1
+		a=a+1}
+	if(y>ncol(TestSample)){	
+		y=1
+		x=x+1
+		}
+	V=abs(TestSample[a,y]-DB[x,y])
+	if(V<0.5){
+		V1=1}else{V1=0}
+	if(y==ncol(TestSample)){
+		V2=V2+V1
+		V2=V2/ncol(TestSample)}else{V2=V2+V1}
+	if(y==ncol(TestSample)){
+		Val3[x1,x2]=V2
+		V2=0
+		x1=x1+1
+		if(x1>nrow(Val3)){
+			x1=1
+			x2=x2+1}else{x2=x2}
+		}else{}
+	}
+TVal=Val1
+x=1
+y=1
+while(x<=nrow(TVal) & y<=ncol(TVal)){
+	TVal[x,y]=Val1[x,y]+Val2[x,y]+Val3[x,y]
+	x=x+1
+	if(x>nrow(TVal)){
+		x=1
+		y=y+1}
+}
+S=1
+maximal=max(TVal[,S])
+Result=cbind("Species"=rownames(TVal)[TVal[,S] == maximal],"Score"=maximal)
+while(S<=ncol(TVal)){
+	S=S+1
+	maximal=max(TVal[,S])
+	ResTMP=cbind("Species"=rownames(TVal)[TVal[,S] == maximal],"Score"=maximal)
+	Result=rbind(Result, ResTMP)
+	if(S==ncol(TVal)){break}
+}
+setwd("D:\\")
+write.table("Result.txt", sep="\t")
